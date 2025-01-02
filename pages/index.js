@@ -1,40 +1,177 @@
-import Link from 'next/link';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 px-4">
-      <h1 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-white">
-        Tangerine Wellness Platform
-      </h1>
-      
-      <div className="grid md:grid-cols-2 gap-6 max-w-2xl w-full">
-        <DashboardCard 
-          href="/dashboard/practitioner"
-          title="Practitioner Portal"
-          description="Access blog management, AI tools, and professional resources"
-          icon="🩺"
-        />
-        
-        <DashboardCard 
-          href="/dashboard/user"
-          title="User Portal"
-          description="Read blogs, get wellness advice, and explore Ayurvedic insights"
-          icon="🌿"
-        />
-      </div>
-    </div>
-  );
-}
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user'
+  });
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-function DashboardCard({ href, title, description, icon }) {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (isLogin) {
+      // Handle login
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (result.error) {
+        setError('Invalid credentials');
+        return;
+      }
+
+      // Redirect based on role
+      const role = formData.role;
+      router.push(role === 'practitioner' ? '/dashboard/practitioner' : '/dashboard/user');
+    } else {
+      // Handle registration
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message);
+        }
+
+        // Automatically login after registration
+        const loginResult = await signIn('credentials', {
+          redirect: false,
+          email: formData.email,
+          password: formData.password
+        });
+
+        if (loginResult.error) {
+          setError('Registration successful but login failed');
+          return;
+        }
+
+        // Redirect based on role
+        const role = formData.role;
+        router.push(role === 'practitioner' ? '/dashboard/practitioner' : '/dashboard/user');
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+  };
+
   return (
-    <Link 
-      href={href} 
-      className="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all text-gray-900 dark:text-white"
-    >
-      <div className="text-4xl mb-4">{icon}</div>
-      <h2 className="text-2xl font-semibold mb-2">{title}</h2>
-      <p className="text-gray-600 dark:text-gray-400">{description}</p>
-    </Link>
+    <div className="auth-container">
+      <h2>{isLogin ? 'Login' : 'Register'}</h2>
+      {error && <div className="error-message">{error}</div>}
+      <form onSubmit={handleSubmit}>
+        {!isLogin && (
+          <div className="form-group">
+            <label>Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              required
+            />
+          </div>
+        )}
+        <div className="form-group">
+          <label>Email</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            required
+          />
+        </div>
+        {!isLogin && (
+          <div className="form-group">
+            <label>Role</label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
+            >
+              <option value="user">User</option>
+              <option value="practitioner">Practitioner</option>
+            </select>
+          </div>
+        )}
+        <button type="submit" className="auth-button">
+          {isLogin ? 'Login' : 'Register'}
+        </button>
+        <button 
+          type="button" 
+          className="toggle-button"
+          onClick={() => setIsLogin(!isLogin)}
+        >
+          {isLogin ? 'Need an account? Register' : 'Already have an account? Login'}
+        </button>
+      </form>
+
+      <style jsx>{`
+        .auth-container {
+          max-width: 400px;
+          margin: 2rem auto;
+          padding: 2rem;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+        }
+        input, select {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .auth-button {
+          width: 100%;
+          padding: 0.75rem;
+          background-color: #0070f3;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          margin-top: 1rem;
+        }
+        .toggle-button {
+          width: 100%;
+          padding: 0.75rem;
+          background: none;
+          border: none;
+          color: #0070f3;
+          cursor: pointer;
+          margin-top: 0.5rem;
+        }
+        .error-message {
+          color: #ff0000;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+      `}</style>
+    </div>
   );
 }

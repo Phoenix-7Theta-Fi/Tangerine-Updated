@@ -1,37 +1,50 @@
+import withAuth from '../../components/withAuth';
 import Link from 'next/link';
 
-export default function UserDashboard() {
+function UserDashboard() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-md">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-        User Dashboard
-      </h1>
-      
-      <div className="space-y-4">
-        <DashboardLink 
-          href="/blog" 
-          title="Blog" 
-          description="Read wellness and Ayurvedic articles"
-        />
-        
-        <DashboardLink 
-          href="/ai-chat" 
-          title="AI Wellness Assistant" 
-          description="Get personalized wellness advice"
-        />
-      </div>
+    <div className="dashboard-container">
+      <h1>User Dashboard</h1>
+      <nav className="dashboard-nav">
+        <Link href="/blog" className="nav-link">
+          View Blogs
+        </Link>
+        <Link href="/ai-chat" className="nav-link">
+          AI Chat
+        </Link>
+        <Link href="/profile" className="nav-link">
+          My Profile
+        </Link>
+      </nav>
+
+      <style jsx>{`
+        .dashboard-container {
+          max-width: 1200px;
+          margin: 2rem auto;
+          padding: 2rem;
+        }
+        .dashboard-nav {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+        .nav-link {
+          padding: 1.5rem;
+          background-color: #f0f4f8;
+          border-radius: 8px;
+          text-align: center;
+          text-decoration: none;
+          color: #1a365d;
+          transition: all 0.2s;
+        }
+        .nav-link:hover {
+          background-color: #e2e8f0;
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 }
 
-function DashboardLink({ href, title, description }) {
-  return (
-    <Link 
-      href={href} 
-      className="block p-4 border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white"
-    >
-      <h2 className="text-xl font-semibold mb-2">{title}</h2>
-      <p className="text-gray-600 dark:text-gray-400">{description}</p>
-    </Link>
-  );
-}
+export default withAuth(UserDashboard, ['user', 'practitioner']);
