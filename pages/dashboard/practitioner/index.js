@@ -1,11 +1,31 @@
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import { signOut } from 'next-auth/react';
+import { withPageAuth } from '../../../lib/withAuth';
 import Link from 'next/link';
 
 export default function PractitionerDashboard() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.push('/');
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-md">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-        Practitioner Dashboard
-      </h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Welcome, {session.user.name}
+        </h1>
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+        >
+          Logout
+        </button>
+      </div>
       
       <div className="space-y-4">
         <DashboardLink 
@@ -41,3 +61,5 @@ function DashboardLink({ href, title, description }) {
     </Link>
   );
 }
+
+export const getServerSideProps = withPageAuth(null, ['practitioner']);
